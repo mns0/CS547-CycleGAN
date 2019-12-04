@@ -33,9 +33,6 @@ if opt.mode == "train":
             'name' : opt.name, 'mode': opt.mode, 'res': opt.res, 'crop_size': opt.crop_size, 'batch_size': opt.batch_size}
     trainloader = get_data(**data_options)
 
-    #G_x2y = Generator(Encoder(), ResnetBlock(), Decoder(), 5).cuda()
-    #G_y2x = Generator(Encoder(), ResnetBlock(), Decoder(), 5).cuda()
-    #D_x, D_y =  Discriminator().cuda(), Discriminator().cuda()
 
     G_x2y = generator_cc(Encoder_cc, ResBlock_cc, Decoder_cc).cuda()
     G_y2x = generator_cc(Encoder_cc, ResBlock_cc, Decoder_cc).cuda()
@@ -49,7 +46,6 @@ if opt.mode == "train":
 
     criterion_image = nn.L1Loss()
     criterion_type = nn.L1Loss()
-
 
     x_fake_sample = Sample_from_Pool()
     y_fake_sample = Sample_from_Pool()
@@ -101,7 +97,6 @@ if opt.mode == "train":
             X_fake = Variable(torch.Tensor(x_fake_sample([X_fake.cpu().data.numpy()])[0])).cuda()
             Y_fake = Variable(torch.Tensor(y_fake_sample([Y_fake.cpu().data.numpy()])[0])).cuda()
 
-
             D_x.zero_grad()
             D_y.zero_grad()
             D_X_real = D_x(X_real)
@@ -123,7 +118,6 @@ if opt.mode == "train":
             print(G_loss.item(),D_X_loss.item(),D_Y_loss.item())
 
         print('----EPOCH{} FINISHED'.format(epoch))
-
 
 else:
     #TODO: Validation code
