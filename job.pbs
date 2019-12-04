@@ -1,0 +1,15 @@
+#!/bin/bash
+#PBS -l nodes=02:ppn=16:xk
+#PBS -N cycleganSync
+#PBS -l walltime=0:10:00
+#PBS -q debug
+#PBS -e dropout_$PBS_JOBNAME.$PBS_JOBID.err
+#PBS -o dropout_$PBS_JOBNAME.$PBS_JOBID.out
+cd /u/sciteam/shankla2/scratch/ie534/cyclegan
+
+. /opt/modules/default/init/bash # NEEDED to add module commands to shell
+
+module load bwpy/2.0.2
+module load bwpy-mpi
+
+aprun -n 2 -N 1 python main_parallel.py --datafolder "./datasets" --dataset "monet2photo" --name "tmp" --mode "train" --res 128 --crop_size 32 --num_epochs 100 --batch_size 16
