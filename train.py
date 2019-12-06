@@ -3,6 +3,7 @@ import torch.nn as nn
 import time
 from torch.autograd import Variable, grad
 import torch.distributed as dist
+import numpy as np
 
 def calc_gradient_penalty(netD, real_data, fake_data, wgan_lambda, batch_size):
     alpha = torch.rand(batch_size, 1)
@@ -28,7 +29,7 @@ def calc_gradient_penalty(netD, real_data, fake_data, wgan_lambda, batch_size):
     return gradient_penalty
 
 
-def train_step(epoch,trainloader, G_x2y, G_y2x, D_x, D_y, optimizer_G_x2y,optimizer_G_y2x,optimizer_D_x, optimizer_D_y, criterion_image, criterion_type, criterion_identity , batch_size, x_fake_sample,y_fake_sample,lambda_identity_loss, lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file):
+def train_step(epoch,trainloader, G_x2y, G_y2x, D_x, D_y, optimizer_G_x2y,optimizer_G_y2x,optimizer_D_x, optimizer_D_y, criterion_image, criterion_type, criterion_identity , batch_size, x_fake_sample,y_fake_sample,lambda_identity_loss, lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file,fh):
 
     start_time = time.time()
     for batch_idx, (X_real, Y_real) in enumerate(trainloader):
@@ -133,5 +134,5 @@ def train_step(epoch,trainloader, G_x2y, G_y2x, D_x, D_y, optimizer_G_x2y,optimi
     sav_dat = [epoch, G_loss.item(), D_X_loss.item(), D_Y_loss.item(), delta_t]
     np.savetxt(fh,sav_dat)
 
-    print('----EPOCH{} FINISHED'.format(epoch), )
+    print('----EPOCH{} FINISHED'.format(epoch) )
    # return G_loss.item(), D_X_loss.item(), D_Y_loss.item()

@@ -75,7 +75,7 @@ if opt.mode == "train":
                optimizer_G_x2y,optimizer_G_y2x,optimizer_D_x, optimizer_D_y,\
                criterion_image,criterion_type,criterion_identity, batch_size,\
                x_fake_sample,y_fake_sample,lambda_identity_loss,\
-               lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file)
+               lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file,fh)
 
 else:
     #TODO: Validation code
