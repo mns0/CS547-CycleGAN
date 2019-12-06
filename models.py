@@ -6,7 +6,7 @@ import torch.nn as nn
 class Generator(nn.Module):
     def __init__(self, Encoder, ResnetBlock, Decoder, num_of_resblocks=3):
         super(Generator, self).__init__()
-        self.Encoder = Encoder
+        self.Encoder = Encoder 
         self.Resnet = ResnetBlock
         self.Decoder = Decoder
         self.num_of_resblocks = num_of_resblocks
@@ -129,9 +129,6 @@ class Discriminator(nn.Module):
         x = x.view(-1,512)
         x = self.fc(x)
         return x
-
-
-
 
 class Encoder_cc(nn.Module):
     def __init__(self):
