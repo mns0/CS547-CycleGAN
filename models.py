@@ -4,7 +4,7 @@ import torch.nn as nn
 
 #A simple patchgan discriminator
 class Generator(nn.Module):
-    def __init__(self, Encoder, ResnetBlock, Decoder, num_of_resblocks=3):
+    def __init__(self, Encoder, ResnetBlock, Decoder, num_of_resblocks=2):
         super(Generator, self).__init__()
         self.Encoder = Encoder 
         self.Resnet = ResnetBlock
@@ -193,9 +193,10 @@ class generator_cc(nn.Module):
 
     def forward(self, x):
         x = self.encoder(x)
-        for i in range(3):
+        for i in range(5):
             x = self.resblock(x)
         x = self.decoder(x)
+
         return x
 
 class discriminator_cc(nn.Module):

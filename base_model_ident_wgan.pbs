@@ -1,0 +1,62 @@
+#!/bin/bash
+#PBS -lnodes=1:ppn=16:xk,walltime=48:00:00
+#PBS -lgres=shifter16
+#PBS -v UDI="garnoldncsa/centos-pytorch101:latest -v /dsl/opt/cray:/opt/cray"
+#PBS -N base_model_ident_wgan
+#PBS -q high
+
+# This is the module setup required to run shifter and 
+# the Cray MPI ABI compatibility layer supporting mpich
+# inside a container
+module unload PrgEnv-cray
+module load PrgEnv-gnu
+module load cudatoolkit
+module load cray-mpich-abi
+module load shifter
+
+export CRAY_ROOTFS=SHIFTER
+
+# send MY_LD_LIBRARY_PATH into the container
+# /u/staff/arnoldg/pytorch has some symlinks in it to 
+# keep mpich in the container happy with cray-mpich-abi
+export MY_LD_LIBRARY_PATH=\
+/u/staff/arnoldg/pytorch:\
+$(readlink -f /opt/cray/wlm_detect/default/lib64):\
+$(readlink -f /opt/cray/nvidia/default/lib64):\
+/usr/local/cuda/lib64:\
+$LD_LIBRARY_PATH:\
+$CRAY_LD_LIBRARY_PATH
+# send MY_PATH into the container
+export MY_PATH=/usr/local/bin:/root/anaconda3/bin:$PATH
+# send cuda device 0 set at CUDA_VISIBLE_DEVICES into container
+export CUDA_VISIBLE_DEVICES=0
+
+# change to your job directory
+cd /u/training/tra357/scratch/cyclegan_clean_tests/cyclegan
+
+#echo "### Testing garnoldncsa/centos-pytorch container (pytorch0.4.1) ###"
+
+# just change the last line and any aprun options , leave 
+# everything between the double dashes -- shifter ... --
+#aprun -b -n 2 -N 1\
+#  -- shifter \
+#  --image=garnoldncsa/centos-pytorch \
+#  -V /dsl/opt/cray:/opt/cray \
+#  -- ~arnoldg/pytorch/test_torch.sh
+
+echo "### Testing garnoldncsa/centos-pytorch101 container (pytorch1.0.1) ###"
+
+# just change the last line and any aprun options , leave 
+# everything between the double dashes -- shifter ... --
+
+#sleep $[ ( $RANDOM % 180 ) + 1 ]
+
+aprun -b -n 1 -N 1\
+  -- base_model_ident_wgan.sh
+
+exit
+aprun -b -n 1 -N 1\
+  -- shifter \
+  --image=garnoldncsa/centos-pytorch101 \
+  -V /dsl/opt/cray:/opt/cray \
+  -- base_model_ident_wgan.sh

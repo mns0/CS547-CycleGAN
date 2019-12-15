@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
 import copy 
+import os
+
+
 
 def get_data(**opts):
     location = opts['folder'] + '/' +  opts['dataset']
@@ -35,6 +38,41 @@ def test_plot(data):
         ax[c][1].imshow(data[i]['imageB'].numpy().transpose(2,1,0))
         c +=1
     plt.show()
+
+
+
+class cycle_data(Dataset):
+
+    def __init__(self,path):
+
+        self.monet = []
+        self.photo = []
+        monet_path = path+'trainA/'
+        photo_path = path+'trainB/'
+        for monet_name in os.listdir(monet_path):
+            self.monet.append(monet_path+monet_name)
+        for photo_name in os.listdir(photo_path):
+            self.photo.append(photo_path+photo_name)
+
+    def __len__(self):
+
+        assert len(self.monet) != len(self.photo), "Size Different!"
+
+        return len(self.monet)
+
+    def __getitem__(self, idx):
+
+        x,y = plt.imread(self.monet[idx]),plt.imread(self.photo[idx])
+        x = (x-np.min(x))/np.ptp(x)
+        y = (y-np.min(y))/np.ptp(y)
+        x = np.moveaxis(x,(0,1,2),(1,2,0))
+        y = np.moveaxis(y,(0,1,2),(1,2,0))
+        return x,y
+
+
+
+
+
 
 class CycleGanDataLoader(Dataset):
     """Data loader for cyclegan """ 
@@ -109,8 +147,8 @@ class cycle_data(Dataset):
 
         self.monet = []
         self.photo = []
-        monet_path = path+'monet/'
-        photo_path = path+'photo/'
+        monet_path = path+'trainA/'
+        photo_path = path+'trainB/'
         for monet_name in os.listdir(monet_path):
             self.monet.append(monet_path+monet_name)
         for photo_name in os.listdir(photo_path):

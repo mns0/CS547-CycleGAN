@@ -111,13 +111,14 @@ def train_step(epoch,trainloader, G_x2y, G_y2x, D_x, D_y, optimizer_G_x2y,optimi
         D_Y_loss.backward()
         optimizer_D_y.step()
 
-    #save models every 5 epochs
+        print(epoch, batch_idx/len(trainloader)*100, G_loss.item(), D_X_loss.item(), D_Y_loss.item() )
 
+    #save models every 5 epochs
     if epoch % 5 == 0:
-        torch.save(G_x2y.state_dict(), f'{save_dir}/G_x2y_epoch-{epoch}.ckpt')
-        torch.save(G_y2x.state_dict(), f'{save_dir}/G_y2x_epoch-{epoch}.ckpt')
-        torch.save(D_x.state_dict(),   f'{save_dir}/D_x_epoch-{epoch}.ckpt')
-        torch.save(D_y.state_dict(),   f'{save_dir}/D_y_epoch-{epoch}.ckpt')
+        torch.save(G_x2y.state_dict(), '{}/G_x2y_epoch-{}.ckpt'.format(save_dir,epoch))
+        torch.save(G_y2x.state_dict(), '{}/G_y2x_epoch-{}.ckpt'.format(save_dir,epoch))
+        torch.save(D_x.state_dict(),   '{}/D_x_epoch-{}.ckpt'.format(save_dir,epoch))
+        torch.save(D_y.state_dict(),   '{}/D_y_epoch-{}.ckpt'.format(save_dir,epoch))
 
     #for bluewaters
     for sing_opt in [optimizer_G_x2y, optimizer_G_y2x, optimizer_D_x, optimizer_D_y]:
@@ -136,3 +137,115 @@ def train_step(epoch,trainloader, G_x2y, G_y2x, D_x, D_y, optimizer_G_x2y,optimi
 
     print('----EPOCH{} FINISHED'.format(epoch) )
    # return G_loss.item(), D_X_loss.item(), D_Y_loss.item()
+
+
+
+def train_step_two_step(epoch,trainloader, G_x2y, G_y2x, D_x, D_y, optimizer_G_x2y,optimizer_G_y2x,optimizer_D_x, optimizer_D_y, criterion_image, criterion_type, criterion_identity , batch_size, x_fake_sample,y_fake_sample,lambda_identity_loss, lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file,fh ,D_xp,D_yp,optimizer_D_xp,optimizer_D_yp):
+
+    start_time = time.time()
+    for batch_idx, (X_real, Y_real) in enumerate(trainloader):
+
+        if(Y_real.shape[0] < batch_size):
+            continue
+
+        G_x2y.train()
+        G_y2x.train()
+        D_x.train()
+        D_y.train()
+        D_xp.train()
+        D_yp.train()
+
+        G_x2y.zero_grad()
+        G_y2x.zero_grad()
+        X_real, Y_real = Variable(X_real.float()).cuda(), Variable(Y_real.float()).cuda()
+
+        X_fake = G_y2x(Y_real)
+        Y_fake = G_x2y(X_real)
+
+        X_cycle = G_y2x(Y_fake)
+        Y_cycle = G_x2y(X_fake)
+
+        D_X_real = D_x(X_real)
+        D_Y_real = D_y(Y_real)
+        D_X_fake = D_x(X_fake)
+        D_Y_fake = D_y(Y_fake)
+
+        loss_cycle = criterion_image(X_real,X_cycle)+criterion_image(Y_real,Y_cycle)
+        real_label = Variable(torch.ones(D_Y_fake.size())).cuda()
+        loss_G_X2Y = criterion_type(D_Y_fake,real_label)
+        loss_G_Y2X = criterion_type(D_X_fake,real_label)
+
+        #identity loss
+        loss_idt_A = 0
+        loss_idt_B = 0
+        #values taken from cyclegan defaults
+        #lambda_identity_loss = 0.5
+        #lambda_y = 10.0
+        #lambda_x = 10.0
+
+        if lambda_identity_loss > 0:
+            I_x = G_x2y(Y_real)
+            I_y = G_y2x(X_real)
+
+            loss_idt_A = criterion_identity(I_x,Y_real) * lambda_idt_y * lambda_identity_loss
+            loss_idt_B = criterion_identity(I_y,X_real) * lambda_idt_x * lambda_identity_loss
+
+        G_loss = loss_G_X2Y + loss_G_Y2X + 10*loss_cycle + loss_idt_A + loss_idt_B
+        G_loss.backward()
+
+        optimizer_G_x2y.step()
+        optimizer_G_y2x.step()
+
+        X_fake = Variable(torch.Tensor(x_fake_sample([X_fake.cpu().data.numpy()])[0])).cuda()
+        Y_fake = Variable(torch.Tensor(y_fake_sample([Y_fake.cpu().data.numpy()])[0])).cuda()
+
+        D_x.zero_grad()
+        D_y.zero_grad()
+        D_X_real = D_x(X_real)
+        D_Y_real = D_y(Y_real)
+        D_X_fake = D_x(X_fake)
+        D_Y_fake = D_y(Y_fake)
+        real_label = Variable(torch.ones(D_Y_fake.size())).cuda()
+        fake_label = Variable(torch.zeros(D_Y_fake.size())).cuda()
+
+        wgan_loss_d_x = 0
+        wgan_loss_d_y = 0
+
+        if wgan_lambda > 0:
+            wgan_loss_d_x = calc_gradient_penalty(D_x, Y_real, Y_fake, wgan_lambda, batch_size)
+            wgan_loss_d_y = calc_gradient_penalty(D_y, X_real, X_fake, wgan_lambda, batch_size)
+
+        D_X_loss = criterion_type(D_X_fake,fake_label)+criterion_type(D_X_real,real_label) + wgan_loss_d_x
+        D_Y_loss = criterion_type(D_Y_fake,fake_label)+criterion_type(D_Y_real,real_label) + wgan_loss_d_y
+
+        D_X_loss.backward()
+        optimizer_D_x.step()
+
+        D_Y_loss.backward()
+        optimizer_D_y.step()
+
+        print(epoch, batch_idx/len(trainloader)*100, G_loss.item(), D_X_loss.item(), D_Y_loss.item() )
+
+    #save models every 5 epochs
+    if epoch % 5 == 0:
+        torch.save(G_x2y.state_dict(), '{}/G_x2y_epoch-{}.ckpt'.format(save_dir,epoch))
+        torch.save(G_y2x.state_dict(), '{}/G_y2x_epoch-{}.ckpt'.format(save_dir,epoch))
+        torch.save(D_x.state_dict(),   '{}/D_x_epoch-{}.ckpt'.format(save_dir,epoch))
+        torch.save(D_y.state_dict(),   '{}/D_y_epoch-{}.ckpt'.format(save_dir,epoch))
+
+    #for bluewaters
+    for sing_opt in [optimizer_G_x2y, optimizer_G_y2x, optimizer_D_x, optimizer_D_y]:
+        for group in sing_opt.param_groups:
+            for p in group['params']:
+                state = sing_opt.state[p]
+                if(state['step']>=1024):
+                    state['step'] = 1000
+
+
+    delta_t = time.time() - start_time
+
+    print(epoch, G_loss.item(), D_X_loss.item(), D_Y_loss.item(), delta_t)
+    sav_dat = [epoch, G_loss.item(), D_X_loss.item(), D_Y_loss.item(), delta_t]
+    np.savetxt(fh,sav_dat)
+
+    print('----EPOCH{} FINISHED'.format(epoch) )
