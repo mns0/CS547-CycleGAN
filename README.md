@@ -48,4 +48,4 @@ Note, all methods require the dataset downloaded to a specific directory. In met
 
 <https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/datasets/download_cyclegan_dataset.sh>
 
-Sample pbs files are included for executing the code on Bluewaters. 
+Sample pbs files are included for executing the code on Bluewaters. Models are save to directories in the ckpts folder which need to be created then specified using the save\_dir option. 
