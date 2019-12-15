@@ -199,6 +199,26 @@ class generator_cc(nn.Module):
 
         return x
 
+class generator_cc_stacked(nn.Module):
+    def __init__(self,Encoder_cc,ResBlock_cc,Decoder_cc):
+        super(generator_cc_stacked, self).__init__()
+        self.encoder = Encoder_cc()
+        self.resblock = ResBlock_cc()
+        self.decoder = Decoder_cc()
+
+    def forward(self, x):
+        x = self.encoder(x)
+        for i in range(2):
+            x = self.resblock(x)
+        x = self.decoder(x)
+        x = self.encoder(x)
+        for i in range(2):
+            x = self.resblock(x)
+        x = self.decoder(x)
+        return x
+
+
+
 class discriminator_cc(nn.Module):
     def __init__(self):
         super(discriminator_cc, self).__init__()
