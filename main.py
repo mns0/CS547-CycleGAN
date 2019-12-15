@@ -49,7 +49,6 @@ lambda_idt_y = opt.lambda_identity_x
 lambda_idt_x = opt.lambda_identity_y
 
 wgan_lambda = opt.wgan_lambda
-two_step = opt.two_step
 #saving the loss file
 save_dir = opt.save_dir
 save_log_file = save_dir + "/loss.log"
@@ -83,8 +82,6 @@ if opt.mode == "train":
     optimizer_D_x = torch.optim.Adam(D_x.parameters(), lr=0.0001, betas=(0,0.9))
     optimizer_D_y = torch.optim.Adam(D_y.parameters(), lr=0.0001, betas=(0,0.9))
 
-    if two_step:
-        D_xp, D_yp =  discriminator_cc().cuda(), discriminator_cc().cuda()
 
     criterion_image = nn.L1Loss()
     criterion_type = nn.L1Loss()
@@ -94,12 +91,11 @@ if opt.mode == "train":
     y_fake_sample = Sample_from_Pool()
 
     for epoch in range(num_epochs):
-        if not two_step:
-            train_step(epoch,trainloader, G_x2y, G_y2x,D_x,D_y,\
-                   optimizer_G_x2y,optimizer_G_y2x,optimizer_D_x, optimizer_D_y,\
-                   criterion_image,criterion_type,criterion_identity, batch_size,\
-                   x_fake_sample,y_fake_sample,lambda_identity_loss,\
-                   lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file,fh)
+        train_step(epoch,trainloader, G_x2y, G_y2x,D_x,D_y,\
+               optimizer_G_x2y,optimizer_G_y2x,optimizer_D_x, optimizer_D_y,\
+               criterion_image,criterion_type,criterion_identity, batch_size,\
+               x_fake_sample,y_fake_sample,lambda_identity_loss,\
+               lambda_idt_x,lambda_idt_y, wgan_lambda, save_dir,save_log_file,fh)
 
     fh.close()
 
